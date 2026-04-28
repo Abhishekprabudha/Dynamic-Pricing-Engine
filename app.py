@@ -2,10 +2,12 @@ import time
 from pathlib import Path
 from datetime import datetime, timedelta
 import re
+import base64
 
 import numpy as np
 import plotly.graph_objects as go
 import streamlit as st
+import streamlit.components.v1 as components
 
 
 # -----------------------------
@@ -61,6 +63,13 @@ def tier_label(fill_ratio: float) -> str:
 
 def rate_per_ton(fill_ratio: float) -> float:
     return MARKET_RATE * pricing_factor(fill_ratio)
+
+
+@st.cache_data(show_spinner=False)
+def video_data_uri(video_path: str) -> str:
+    with open(video_path, "rb") as vf:
+        encoded = base64.b64encode(vf.read()).decode("utf-8")
+    return f"data:video/mp4;base64,{encoded}"
 
 
 # -----------------------------
@@ -242,7 +251,22 @@ with left:
 
     st.subheader("🎥 Live Loading Feed")
     st.write(f"**Now playing:** {current_video.name}")
-    st.video(str(current_video))
+    video_src = video_data_uri(str(current_video))
+    components.html(
+        f"""
+        <video
+            style="width:100%; border-radius: 10px;"
+            autoplay
+            muted
+            loop
+            playsinline
+            controls
+        >
+            <source src="{video_src}" type="video/mp4">
+        </video>
+        """,
+        height=420
+    )
 
 # -----------------------------
 # Generate telemetry (seeded by video + asset)
